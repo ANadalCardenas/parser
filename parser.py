@@ -1,4 +1,5 @@
 import nltk
+nltk.download('punkt_tab')
 import sys
 
 TERMINALS = """
@@ -10,12 +11,16 @@ N -> "armchair" | "companion" | "day" | "door" | "hand" | "he" | "himself"
 N -> "holmes" | "home" | "i" | "mess" | "paint" | "palm" | "pipe" | "she"
 N -> "smile" | "thursday" | "walk" | "we" | "word"
 P -> "at" | "before" | "in" | "of" | "on" | "to"
-V -> "arrived" | "came" | "chuckled" | "had" | "lit" | "said" | "sat"
+V -> "arrived" | "came" | "chuckled" | "had" | "lit" | "said" | "sat" | "eat"
 V -> "smiled" | "tell" | "were"
 """
 
 NONTERMINALS = """
-S -> N V
+S -> N V | NP VP | S Conj S | S Conj VP | VP NP | VP
+NP -> N | Det N | Adj NP | NP PP | Det AP | NP Adv
+VP -> V | V NP | VP PP | VP Adv | Adv VP
+AP -> Adj | Adj AP
+PP -> P NP
 """
 
 grammar = nltk.CFG.fromstring(NONTERMINALS + TERMINALS)
@@ -50,7 +55,7 @@ def main():
     for tree in trees:
         tree.pretty_print()
 
-        print("Noun Phrase Chunks")
+        print("Chunks")
         for np in np_chunk(tree):
             print(" ".join(np.flatten()))
 
@@ -76,7 +81,14 @@ def np_chunk(tree):
     whose label is "NP" that does not itself contain any other
     noun phrases as subtrees.
     """
-    raise NotImplementedError
+    chunks = []
+    # Iterate through all subtrees labeled "NP"
+    for subtree in tree.subtrees(lambda t: t.label() == "NP"):
+        # Check if this NP contains any other NP as a subtree (excluding itself)
+        if not any(child.label() == "NP" for child in subtree.subtrees(lambda t: t != subtree and t.label() == "NP")):
+            chunks.append(subtree)
+    return chunks
+    
 
 
 if __name__ == "__main__":
